@@ -5,10 +5,11 @@
       <!-- Profil Bilgileri -->
       <div class="p-4 border-b">
         <div class="flex items-center space-x-3">
-          <img :src="userPhotoUrl || '/img/default-avatar.png'" alt="Profil Fotoğrafı" class="w-12 h-12 rounded-full">
+          <div class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
+            <i class="fas fa-user text-2xl text-gray-600"></i>
+          </div>
           <div>
             <h3 class="font-medium">{{ userName }}</h3>
-            <p class="text-sm text-gray-500">{{ userEmail }}</p>
           </div>
         </div>
       </div>
@@ -180,7 +181,7 @@ const isLoading = ref(false)
 // Kullanıcı bilgilerini yükle
 onMounted(() => {
   const userData = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}')
-  userName.value = `${userData.name || ''} ${userData.surname || ''}`
+  userName.value = userData.surname || ''
   userEmail.value = userData.email || ''
   userPhotoUrl.value = userData.photoUrl || '/img/default-avatar.png'
   
