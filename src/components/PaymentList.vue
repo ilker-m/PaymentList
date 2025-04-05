@@ -39,7 +39,7 @@
       <div class="bg-white shadow rounded-lg">
         <div class="p-4 flex justify-between items-center border-b">
           <div class="flex items-center space-x-4">
-            <h1 class="text-lg font-bold">Ödeme Listeleri (LST-1-27.03.2025)</h1>
+            <h1 class="text-lg font-bold">Ödeme Listeleri (LST-1)</h1>
             <div class="flex space-x-2">
               <select v-model="selectedList" class="rounded border-gray-300 shadow-sm">
                 <option value="">Liste Seçiniz</option>
@@ -52,7 +52,7 @@
               <button class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-sm">
                 Sil
               </button>
-              <button class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 text-sm">
+              <button @click="fetchPaymentList" class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 text-sm">
                 Yenile
               </button>
             </div>
@@ -65,7 +65,14 @@
           </div>
         </div>
 
-        <div class="overflow-x-auto">
+        <!-- Yükleniyor göstergesi -->
+        <div v-if="isLoading" class="p-8 text-center">
+          <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent"></div>
+          <p class="mt-2 text-gray-600">Veriler yükleniyor...</p>
+        </div>
+
+        <!-- Tablo -->
+        <div v-else class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr class="text-xs">
@@ -165,6 +172,10 @@ const router = useRouter()
 const userName = ref('')
 const userEmail = ref('')
 const userPhotoUrl = ref('')
+const selectedList = ref('')
+const selectAll = ref(false)
+const rows = ref([])
+const isLoading = ref(false)
 
 // Kullanıcı bilgilerini yükle
 onMounted(() => {
@@ -172,7 +183,45 @@ onMounted(() => {
   userName.value = `${userData.name || ''} ${userData.surname || ''}`
   userEmail.value = userData.email || ''
   userPhotoUrl.value = userData.photoUrl || '/img/default-avatar.png'
+  
+  // Verileri yükle
+  fetchPaymentList()
 })
+
+// API'den ödeme listesini çek
+const fetchPaymentList = async () => {
+  isLoading.value = true
+  try {
+    const response = await fetch('https://mobil.alkbusiness.com/api/Payment/GetPaymentList?ListId=LST-1')
+    const data = await response.json()
+    
+    // API verilerini rows formatına dönüştür
+    rows.value = data.map(item => ({
+      group: item.RelatedUnitIdName || 'Diğer',
+      cariKod: item.CurrentCode,
+      cariIsim: item.CurrentName,
+      firmaTipi: item.CompanyType || '',
+      firmaLokasyonu: item.CompanyLocation || '',
+      birimAdi: item.RelatedUnit || '',
+      bakiyeTL: item.BalanceTL,
+      guncelBakiyeTL: item.CurrentBalanceTL,
+      bakiyeDoviz: item.ForeignCurrencyBalance,
+      sonFatura: item.LastInvoiceInfo ? item.LastInvoiceInfo.split(' ')[0] : '',
+      sonOdemeBilgisi: item.LastPaymentInfo ? item.LastPaymentInfo.split(' ')[0] : '',
+      nakit: item.Cash,
+      havale: item.WireTransfer,
+      cek: item.Check,
+      senet: item.PromissoryNote,
+      ortVade: item.AverageMaturity,
+      not: item.Description,
+      toplamOdeme: item.TotalPayment
+    }))
+  } catch (error) {
+    console.error('Veri çekme hatası:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
 
 // Çıkış işlemi
 const handleLogout = () => {
@@ -188,72 +237,6 @@ const handleLogout = () => {
   // Login sayfasına yönlendir
   router.push('/login')
 }
-
-const selectedList = ref('')
-const selectAll = ref(false)
-
-const rows = ref([
-  {
-    group: '14 - Depo ve Lojistik',
-    cariKod: '320000302729',
-    cariIsim: 'UPS HIZLI KARGO TAŞIMACILIK A.Ş.',
-    firmaTipi: 'Kargo',
-    firmaLokasyonu: 'İstanbul',
-    birimAdi: 'Lojistik',
-    bakiyeTL: -1525.71,
-    guncelBakiyeTL: 1525.71,
-    bakiyeDoviz: 0,
-    sonFatura: '2025-03-25',
-    sonOdemeBilgisi: '2025-03-27',
-    nakit: 4.00,
-    havale: 0,
-    cek: 0,
-    senet: 0,
-    ortVade: 90,
-    not: 'ÖDEME AŞAMASINDA',
-    toplamOdeme: 4.00
-  },
-  {
-    group: '17 - Diğer',
-    cariKod: '320000101214',
-    cariIsim: 'SEVİM YAPAN',
-    firmaTipi: 'Elişi',
-    firmaLokasyonu: 'Aydın',
-    birimAdi: 'Üretim',
-    bakiyeTL: 3574.80,
-    guncelBakiyeTL: 74.80,
-    bakiyeDoviz: 0,
-    sonFatura: '2025-03-20',
-    sonOdemeBilgisi: '2025-03-25',
-    nakit: 1500.00,
-    havale: 2000.00,
-    cek: 0,
-    senet: 0,
-    ortVade: 15,
-    not: '',
-    toplamOdeme: 3500.00
-  },
-  {
-    group: '17 - Diğer',
-    cariKod: '320000105566',
-    cariIsim: 'ŞİMŞEK EGE ETİKET',
-    firmaTipi: 'Etiket',
-    firmaLokasyonu: 'İzmir',
-    birimAdi: 'Üretim',
-    bakiyeTL: 6545.20,
-    guncelBakiyeTL: 0,
-    bakiyeDoviz: 0,
-    sonFatura: '2025-03-15',
-    sonOdemeBilgisi: '2025-03-20',
-    nakit: 3000.00,
-    havale: 3545.20,
-    cek: 0,
-    senet: 0,
-    ortVade: 30,
-    not: '',
-    toplamOdeme: 6545.20
-  }
-])
 
 function updateTotalOdeme(row) {
   row.toplamOdeme = (Number(row.nakit) || 0) + 
