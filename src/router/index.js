@@ -18,6 +18,18 @@ const routes = [
     name: 'Dashboard',
     component: PaymentList,
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/payment-list',
+    name: 'PaymentList',
+    component: PaymentList,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/create-payment-list',
+    name: 'CreatePaymentList',
+    component: () => import('../components/CreatePaymentList.vue'),
+    meta: { requiresAuth: true }
   }
 ]
 
