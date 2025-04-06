@@ -167,7 +167,7 @@ const handleLogin = async () => {
 
     // Log kaydı oluştur
     const logData = {
-      "ApplicationName": "ALK Destek",
+      "ApplicationName": "PaymentListApp",
       "Users": encodeURIComponent(email.value),
       "DeviceInfo": "Kullanıcının tarayıcı bilgisi " + navigator.userAgent,
       "IpAdress": ipAddress
