@@ -66,6 +66,22 @@
           </div>
         </div>
 
+        <!-- Filtreler -->
+        <div class="p-4 border-b">
+          <div class="flex space-x-4">
+            <div class="flex-1">
+              <div class="relative rounded-md shadow-sm">
+                <input type="text" v-model="searchTerm" 
+                  class="block w-full h-12 pr-10 sm:text-lg border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Ara...">
+                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <i class="fas fa-search text-gray-400 text-lg"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Yükleniyor göstergesi -->
         <div v-if="isLoading" class="p-8 text-center">
           <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent"></div>
@@ -77,33 +93,65 @@
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr class="text-xs">
-                <th class="w-8 px-2 py-2"><input type="checkbox" v-model="selectAll"></th>
-                <th class="px-2 py-2 text-left">Cari Kod</th>
-                <th class="px-2 py-2 text-left">Cari İsim</th>
-                <th class="px-2 py-2 text-left">Firma Tipi</th>
-                <th class="px-2 py-2 text-left">Firma Lokasyonu</th>
-                <th class="px-2 py-2 text-left">Birim Adı</th>
-                <th class="px-2 py-2 text-right">Bakiye TL</th>
-                <th class="px-2 py-2 text-right">Güncel Bakiye TL</th>
-                <th class="px-2 py-2 text-right">Bakiye Döviz</th>
-                <th class="px-2 py-2 text-left">Son Fatura</th>
-                <th class="px-2 py-2 text-left">Son Ödeme Bilgisi</th>
-                <th class="px-2 py-2 text-center">Nakit</th>
-                <th class="px-2 py-2 text-center">Havale</th>
-                <th class="px-2 py-2 text-center">Çek</th>
-                <th class="px-2 py-2 text-center">Senet</th>
-                <th class="px-2 py-2 text-right">Ort. Vade</th>
-                <th class="px-2 py-2 text-left">Not</th>
-                <th class="px-2 py-2 text-right">Toplam Ödeme</th>
+                <th class="px-2 py-2 text-left cursor-pointer hover:bg-gray-100" @click="toggleSort('cariKod')">
+                  Cari Kod <i :class="getSortIcon('cariKod')" class="ml-1"></i>
+                </th>
+                <th class="px-2 py-2 text-left cursor-pointer hover:bg-gray-100" @click="toggleSort('cariIsim')">
+                  Cari İsim <i :class="getSortIcon('cariIsim')" class="ml-1"></i>
+                </th>
+                <th class="px-2 py-2 text-left cursor-pointer hover:bg-gray-100" @click="toggleSort('firmaTipi')">
+                  Firma Tipi <i :class="getSortIcon('firmaTipi')" class="ml-1"></i>
+                </th>
+                <th class="px-2 py-2 text-left cursor-pointer hover:bg-gray-100" @click="toggleSort('firmaLokasyonu')">
+                  Firma Lokasyonu <i :class="getSortIcon('firmaLokasyonu')" class="ml-1"></i>
+                </th>
+                <th class="px-2 py-2 text-left cursor-pointer hover:bg-gray-100" @click="toggleSort('birimAdi')">
+                  Birim Adı <i :class="getSortIcon('birimAdi')" class="ml-1"></i>
+                </th>
+                <th class="px-2 py-2 text-right cursor-pointer hover:bg-gray-100" @click="toggleSort('bakiyeTL')">
+                  Bakiye TL <i :class="getSortIcon('bakiyeTL')" class="ml-1"></i>
+                </th>
+                <th class="px-2 py-2 text-right cursor-pointer hover:bg-gray-100" @click="toggleSort('guncelBakiyeTL')">
+                  Güncel Bakiye TL <i :class="getSortIcon('guncelBakiyeTL')" class="ml-1"></i>
+                </th>
+                <th class="px-2 py-2 text-right cursor-pointer hover:bg-gray-100" @click="toggleSort('bakiyeDoviz')">
+                  Bakiye Döviz <i :class="getSortIcon('bakiyeDoviz')" class="ml-1"></i>
+                </th>
+                <th class="px-2 py-2 text-left cursor-pointer hover:bg-gray-100" @click="toggleSort('sonFatura')">
+                  Son Fatura <i :class="getSortIcon('sonFatura')" class="ml-1"></i>
+                </th>
+                <th class="px-2 py-2 text-left cursor-pointer hover:bg-gray-100" @click="toggleSort('sonOdemeBilgisi')">
+                  Son Ödeme Bilgisi <i :class="getSortIcon('sonOdemeBilgisi')" class="ml-1"></i>
+                </th>
+                <th class="px-2 py-2 text-center cursor-pointer hover:bg-gray-100" @click="toggleSort('nakit')">
+                  Nakit <i :class="getSortIcon('nakit')" class="ml-1"></i>
+                </th>
+                <th class="px-2 py-2 text-center cursor-pointer hover:bg-gray-100" @click="toggleSort('havale')">
+                  Havale <i :class="getSortIcon('havale')" class="ml-1"></i>
+                </th>
+                <th class="px-2 py-2 text-center cursor-pointer hover:bg-gray-100" @click="toggleSort('cek')">
+                  Çek <i :class="getSortIcon('cek')" class="ml-1"></i>
+                </th>
+                <th class="px-2 py-2 text-center cursor-pointer hover:bg-gray-100" @click="toggleSort('senet')">
+                  Senet <i :class="getSortIcon('senet')" class="ml-1"></i>
+                </th>
+                <th class="px-2 py-2 text-right cursor-pointer hover:bg-gray-100" @click="toggleSort('ortVade')">
+                  Ort. Vade <i :class="getSortIcon('ortVade')" class="ml-1"></i>
+                </th>
+                <th class="px-2 py-2 text-left cursor-pointer hover:bg-gray-100" @click="toggleSort('not')">
+                  Not <i :class="getSortIcon('not')" class="ml-1"></i>
+                </th>
+                <th class="px-2 py-2 text-right cursor-pointer hover:bg-gray-100" @click="toggleSort('toplamOdeme')">
+                  Toplam Ödeme <i :class="getSortIcon('toplamOdeme')" class="ml-1"></i>
+                </th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200 text-sm">
               <template v-for="(group, groupName) in groupedRows" :key="groupName">
                 <tr class="bg-gray-100">
-                  <td colspan="18" class="px-2 py-1 font-semibold">{{ groupName }}</td>
+                  <td colspan="17" class="px-2 py-1 font-semibold">{{ groupName }}</td>
                 </tr>
-                <tr v-for="row in group" :key="row.cariKod" :class="{'bg-gray-50': row.selected}">
-                  <td class="px-2 py-1"><input type="checkbox" v-model="row.selected"></td>
+                <tr v-for="row in group" :key="row.cariKod">
                   <td class="px-2 py-1">{{ row.cariKod }}</td>
                   <td class="px-2 py-1">{{ row.cariIsim }}</td>
                   <td class="px-2 py-1">{{ row.firmaTipi }}</td>
@@ -146,7 +194,7 @@
             </tbody>
             <tfoot class="bg-gray-50">
               <tr>
-                <td colspan="6" class="px-2 py-2 text-right font-semibold">Toplam:</td>
+                <td colspan="5" class="px-2 py-2 text-right font-semibold">Toplam:</td>
                 <td class="px-2 py-2 text-right font-semibold">{{ formatNumber(totalBakiye) }}</td>
                 <td class="px-2 py-2 text-right font-semibold">{{ formatNumber(totalGuncelBakiye) }}</td>
                 <td colspan="3" class="px-2 py-2"></td>
@@ -174,9 +222,11 @@ const userName = ref('')
 const userEmail = ref('')
 const userPhotoUrl = ref('')
 const selectedList = ref('')
-const selectAll = ref(false)
 const rows = ref([])
 const isLoading = ref(false)
+const searchTerm = ref('')
+const sortColumn = ref('')
+const sortDirection = ref('asc')
 
 // Kullanıcı bilgilerini yükle
 onMounted(() => {
@@ -193,7 +243,7 @@ onMounted(() => {
 const fetchPaymentList = async () => {
   isLoading.value = true
   try {
-    const response = await fetch('https://mobil.alkbusiness.com/api/Payment/GetPaymentList?ListId=LST-1')
+    const response = await fetch('https://mobil.alkbusiness.com/api/Payment/GetPaymentList/AKAL-LST-1')
     const data = await response.json()
     
     // API verilerini rows formatına dönüştür
@@ -246,9 +296,74 @@ function updateTotalOdeme(row) {
                     (Number(row.senet) || 0)
 }
 
+// Sıralama fonksiyonu
+const sortRows = (rows) => {
+  if (!sortColumn.value) return rows
+
+  return [...rows].sort((a, b) => {
+    let aValue = a[sortColumn.value]
+    let bValue = b[sortColumn.value]
+
+    // Sayısal değerler için özel işlem
+    if (['bakiyeTL', 'guncelBakiyeTL', 'bakiyeDoviz', 'nakit', 'havale', 'cek', 'senet', 'ortVade', 'toplamOdeme'].includes(sortColumn.value)) {
+      aValue = Number(aValue) || 0
+      bValue = Number(bValue) || 0
+    }
+
+    // Tarih değerleri için özel işlem
+    if (['sonFatura', 'sonOdemeBilgisi'].includes(sortColumn.value)) {
+      aValue = new Date(aValue)
+      bValue = new Date(bValue)
+    }
+
+    if (aValue < bValue) return sortDirection.value === 'asc' ? -1 : 1
+    if (aValue > bValue) return sortDirection.value === 'asc' ? 1 : -1
+    return 0
+  })
+}
+
+// Sıralama yönünü değiştir
+const toggleSort = (column) => {
+  if (sortColumn.value === column) {
+    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortColumn.value = column
+    sortDirection.value = 'asc'
+  }
+}
+
+// Sıralama ikonunu göster
+const getSortIcon = (column) => {
+  if (sortColumn.value !== column) return 'fas fa-sort'
+  return sortDirection.value === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'
+}
+
+// Filtrelenmiş ve sıralanmış satırları hesapla
+const filteredAndSortedRows = computed(() => {
+  let result = filteredRows.value
+  return sortRows(result)
+})
+
+// Filtrelenmiş satırları hesapla
+const filteredRows = computed(() => {
+  if (!searchTerm.value) {
+    return rows.value
+  }
+  
+  const search = searchTerm.value.toLowerCase()
+  return rows.value.filter(row => {
+    return row.cariKod.toLowerCase().includes(search) || 
+           row.cariIsim.toLowerCase().includes(search) ||
+           (row.firmaTipi && row.firmaTipi.toLowerCase().includes(search)) ||
+           (row.firmaLokasyonu && row.firmaLokasyonu.toLowerCase().includes(search)) ||
+           (row.birimAdi && row.birimAdi.toLowerCase().includes(search)) ||
+           (row.not && row.not.toLowerCase().includes(search))
+  })
+})
+
 const groupedRows = computed(() => {
   const groups = {}
-  rows.value.forEach(row => {
+  filteredAndSortedRows.value.forEach(row => {
     if (!groups[row.group]) {
       groups[row.group] = []
     }
