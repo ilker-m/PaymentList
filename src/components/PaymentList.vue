@@ -215,9 +215,10 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()
+const route = useRoute()
 const userName = ref('')
 const userEmail = ref('')
 const userPhotoUrl = ref('')
@@ -243,7 +244,8 @@ onMounted(() => {
 const fetchPaymentList = async () => {
   isLoading.value = true
   try {
-    const response = await fetch('https://mobil.alkbusiness.com/api/Payment/GetPaymentList/AKAL-LST-1')
+    const listId = route.query.id || 'AKAL-LST-1' // URL'den id parametresini al, yoksa varsayılan değeri kullan
+    const response = await fetch(`https://mobil.alkbusiness.com/api/Payment/GetPaymentList/${listId}`)
     const data = await response.json()
     
     // API verilerini rows formatına dönüştür
