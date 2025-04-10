@@ -50,12 +50,7 @@
               <button class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-sm">
                 Tümünü Listele
               </button>
-              <button class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-sm">
-                Sil
-              </button>
-              <button @click="fetchPaymentList" class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 text-sm">
-                Yenile
-              </button>
+
             </div>
           </div>
           <div class="flex items-center space-x-2">
@@ -89,10 +84,13 @@
         </div>
 
         <!-- Tablo -->
-        <div v-else class="overflow-x-auto">
+        <div class="overflow-x-auto" style="max-height: calc(100vh - 100px); position: relative;">
           <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+            <thead class="bg-gray-50 sticky top-0 z-10">
               <tr class="text-xs">
+                <th class="px-2 py-2 text-left cursor-pointer hover:bg-gray-100" @click="toggleSort('id')">
+                  Id <i :class="getSortIcon('cariKod')" class="ml-1"></i>
+                </th>
                 <th class="px-2 py-2 text-left cursor-pointer hover:bg-gray-100" @click="toggleSort('cariKod')">
                   Cari Kod <i :class="getSortIcon('cariKod')" class="ml-1"></i>
                 </th>
@@ -152,6 +150,7 @@
                   <td colspan="17" class="px-2 py-1 font-semibold">{{ groupName }}</td>
                 </tr>
                 <tr v-for="row in group" :key="row.cariKod">
+                  <td class="px-2 py-1">{{ row.id }}</td>
                   <td class="px-2 py-1">{{ row.cariKod }}</td>
                   <td class="px-2 py-1">{{ row.cariIsim }}</td>
                   <td class="px-2 py-1">{{ row.firmaTipi }}</td>
@@ -169,46 +168,57 @@
                   <td class="px-2 py-1 text-center">
                     <input type="number" v-model="row.nakit" 
                       class="w-16 text-right border-gray-300 rounded" 
-                      @change="updateTotalOdeme(row)">
+                      @change="updatePaymentAmounts(row)">
                   </td>
                   <td class="px-2 py-1 text-center">
                     <input type="number" v-model="row.havale" 
                       class="w-16 text-right border-gray-300 rounded"
-                      @change="updateTotalOdeme(row)">
+                      @change="updatePaymentAmounts(row)">
                   </td>
                   <td class="px-2 py-1 text-center">
                     <input type="number" v-model="row.cek" 
                       class="w-16 text-right border-gray-300 rounded"
-                      @change="updateTotalOdeme(row)">
+                      @change="updatePaymentAmounts(row)">
                   </td>
-                  <td class="px-2 py-1 text-center">
-                    <input type="number" v-model="row.senet" 
-                      class="w-16 text-right border-gray-300 rounded"
-                      @change="updateTotalOdeme(row)">
-                  </td>
+                  <td class="px-2 py-1 text-right">{{ formatNumber(row.senet) }}</td>
                   <td class="px-2 py-1 text-right">{{ row.ortVade }}</td>
                   <td class="px-2 py-1">{{ row.not }}</td>
                   <td class="px-2 py-1 text-right font-semibold">{{ formatNumber(row.toplamOdeme) }}</td>
                 </tr>
               </template>
             </tbody>
+          </table>
+          
+          <!-- Footer - Toplam Satırı (Ayrı tablo olarak) -->
+          <table class="min-w-full sticky bottom-0 z-10">
             <tfoot class="bg-gray-50">
               <tr>
-                <td colspan="5" class="px-2 py-2 text-right font-semibold">Toplam:</td>
-                <td class="px-2 py-2 text-right font-semibold">{{ formatNumber(totalBakiye) }}</td>
-                <td class="px-2 py-2 text-right font-semibold">{{ formatNumber(totalGuncelBakiye) }}</td>
-                <td colspan="3" class="px-2 py-2"></td>
-                <td class="px-2 py-2 text-right font-semibold">{{ formatNumber(totalNakit) }}</td>
-                <td class="px-2 py-2 text-right font-semibold">{{ formatNumber(totalHavale) }}</td>
-                <td class="px-2 py-2 text-right font-semibold">{{ formatNumber(totalCek) }}</td>
-                <td class="px-2 py-2 text-right font-semibold">{{ formatNumber(totalSenet) }}</td>
-                <td colspan="2" class="px-2 py-2"></td>
-                <td class="px-2 py-2 text-right font-semibold">{{ formatNumber(totalAmount) }}</td>
+                <td colspan="5" class="px-2 py-2 text-right font-semibold bg-gray-50">Toplam:</td>
+                <td class="px-2 py-2 text-right font-semibold bg-gray-50">{{ formatNumber(totalBakiye) }}</td>
+                <td class="px-2 py-2 text-right font-semibold bg-gray-50">{{ formatNumber(totalGuncelBakiye) }}</td>
+                <td colspan="3" class="px-2 py-2 bg-gray-50"></td>
+                <td class="px-2 py-2 text-right font-semibold bg-gray-50">{{ formatNumber(totalNakit) }}</td>
+                <td class="px-2 py-2 text-right font-semibold bg-gray-50">{{ formatNumber(totalHavale) }}</td>
+                <td class="px-2 py-2 text-right font-semibold bg-gray-50">{{ formatNumber(totalCek) }}</td>
+                <td class="px-2 py-2 text-right font-semibold bg-gray-50">{{ formatNumber(totalSenet) }}</td>
+                <td colspan="2" class="px-2 py-2 bg-gray-50"></td>
+                <td class="px-2 py-2 text-right font-semibold bg-gray-50">{{ formatNumber(totalAmount) }}</td>
               </tr>
             </tfoot>
           </table>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Notification Component (Inline) -->
+  <div v-if="notification.visible" 
+       :class="['fixed top-4 right-4 px-4 py-2 rounded shadow-lg z-50 transition-all duration-300 transform', 
+               notification.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white']">
+    <div class="flex items-center">
+      <span v-if="notification.type === 'success'" class="mr-2">✓</span>
+      <span v-else class="mr-2">⚠</span>
+      <p>{{ notification.message }}</p>
     </div>
   </div>
 </template>
@@ -228,6 +238,7 @@ const isLoading = ref(false)
 const searchTerm = ref('')
 const sortColumn = ref('')
 const sortDirection = ref('asc')
+const notification = ref({ visible: false, message: '', type: 'success' })
 
 // Kullanıcı bilgilerini yükle
 onMounted(() => {
@@ -247,30 +258,38 @@ const fetchPaymentList = async () => {
     const listId = route.query.id || 'AKAL-LST-1' // URL'den id parametresini al, yoksa varsayılan değeri kullan
     const response = await fetch(`https://mobil.alkbusiness.com/api/Payment/GetPaymentList/${listId}`)
     const data = await response.json()
+    console.log('API Response:', data) // API yanıtını kontrol et
     
     // API verilerini rows formatına dönüştür
-    rows.value = data.map(item => ({
-      group: item.RelatedUnitIdName || 'Diğer',
-      cariKod: item.CurrentCode,
-      cariIsim: item.CurrentName,
-      firmaTipi: item.CompanyType || '',
-      firmaLokasyonu: item.CompanyLocation || '',
-      birimAdi: item.RelatedUnit || '',
-      bakiyeTL: item.BalanceTL,
-      guncelBakiyeTL: item.CurrentBalanceTL,
-      bakiyeDoviz: item.ForeignCurrencyBalance,
-      sonFatura: item.LastInvoiceInfo ? item.LastInvoiceInfo.split(' ')[0] : '',
-      sonOdemeBilgisi: item.LastPaymentInfo ? item.LastPaymentInfo.split(' ')[0] : '',
-      nakit: item.Cash,
-      havale: item.WireTransfer,
-      cek: item.Check,
-      senet: item.PromissoryNote,
-      ortVade: item.AverageMaturity,
-      not: item.Description,
-      toplamOdeme: item.TotalPayment
-    }))
+    rows.value = data.map(item => {
+      console.log('Item:', item) // Her bir öğeyi kontrol et
+      return {
+        id: item.id || item.Id || item.currentId || item.CurrentId,
+        group: item.RelatedUnitIdName,
+        cariKod: item.CurrentCode,
+        cariIsim: item.CurrentName,
+        firmaTipi: item.CompanyType || '',
+        firmaLokasyonu: item.CompanyLocation || '',
+        birimAdi: item.RelatedUnit || '',
+        bakiyeTL: item.BalanceTL,
+        guncelBakiyeTL: item.CurrentBalanceTL,
+        bakiyeDoviz: item.ForeignCurrencyBalance,
+        sonFatura: item.LastInvoiceInfo ? item.LastInvoiceInfo.split(' ')[0] : '',
+        sonOdemeBilgisi: item.LastPaymentInfo ? item.LastPaymentInfo.split(' ')[0] : '',
+        nakit: item.Cash,
+        havale: item.WireTransfer,
+        cek: item.Check,
+        senet: item.PromissoryNote,
+        ortVade: item.AverageMaturity,
+        not: item.Description,
+        toplamOdeme: item.TotalPayment
+      }
+    })
+    
+    showNotification('Veriler başarıyla yüklendi.', 'success')
   } catch (error) {
     console.error('Veri çekme hatası:', error)
+    showNotification('Veri yüklenirken bir hata oluştu.', 'error')
   } finally {
     isLoading.value = false
   }
@@ -291,11 +310,47 @@ const handleLogout = () => {
   router.push('/login')
 }
 
-function updateTotalOdeme(row) {
+function updatePaymentAmounts(row) {
+  // Toplam ödemeyi güncelle
   row.toplamOdeme = (Number(row.nakit) || 0) + 
                     (Number(row.havale) || 0) + 
                     (Number(row.cek) || 0) + 
                     (Number(row.senet) || 0)
+
+  // API'ye gönder
+  const sendToApi = async () => {
+    try {
+      const requestData = {
+        Cash: Number(row.nakit) || 0,
+        WireTransfer: Number(row.havale) || 0,
+        Check: Number(row.cek) || 0,
+        AverageMaturity: Number(row.ortVade) || 0,
+        Description: row.not || ''
+      }
+
+      const response = await fetch(`https://mobil.alkbusiness.com/api/Payment/UpdatePaymentAmounts/${row.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(requestData)
+      })
+
+      if (!response.ok) {
+        throw new Error('API yanıt hatası: ' + response.status)
+      } else {
+        const updatedValue = row.nakit + row.havale + row.cek
+        showNotification(`Ödeme başarıyla güncellendi. Toplam: ${formatNumber(updatedValue)}`, 'success')
+      }
+    } catch (error) {
+      console.error('Güncelleme hatası:', error)
+      showNotification(`Ödeme güncellenirken bir hata oluştu: ${error.message}`, 'error')
+    }
+  }
+
+  // API'ye gönderimi başlat
+  sendToApi()
 }
 
 // Sıralama fonksiyonu
@@ -354,8 +409,8 @@ const filteredRows = computed(() => {
   
   const search = searchTerm.value.toLowerCase()
   return rows.value.filter(row => {
-    return row.cariKod.toLowerCase().includes(search) || 
-           row.cariIsim.toLowerCase().includes(search) ||
+    return row.cariKod?.toLowerCase().includes(search) || 
+           row.cariIsim?.toLowerCase().includes(search) ||
            (row.firmaTipi && row.firmaTipi.toLowerCase().includes(search)) ||
            (row.firmaLokasyonu && row.firmaLokasyonu.toLowerCase().includes(search)) ||
            (row.birimAdi && row.birimAdi.toLowerCase().includes(search)) ||
@@ -366,10 +421,11 @@ const filteredRows = computed(() => {
 const groupedRows = computed(() => {
   const groups = {}
   filteredAndSortedRows.value.forEach(row => {
-    if (!groups[row.group]) {
-      groups[row.group] = []
+    const groupName = row.group || 'Diğer' // group olmayan satırları "Diğer" grubuna ekle
+    if (!groups[groupName]) {
+      groups[groupName] = []
     }
-    groups[row.group].push(row)
+    groups[groupName].push(row)
   })
   return groups
 })
@@ -411,6 +467,13 @@ function formatDate(date) {
   if (!date) return ''
   return new Date(date).toLocaleDateString('tr-TR')
 }
+
+const showNotification = (message, type) => {
+  notification.value = { visible: true, message, type }
+  setTimeout(() => {
+    notification.value.visible = false
+  }, 3000) // 3 saniye sonra otomatik olarak kaybolur
+}
 </script>
 
 <style scoped>
@@ -418,19 +481,36 @@ function formatDate(date) {
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
 
 .table-container {
-  max-height: calc(100vh - 200px);
-  overflow-y: auto;
+  position: relative;
+  height: calc(100vh - 300px);
 }
 
 table {
   font-size: 0.875rem;
+  width: 100%;
+  border-collapse: collapse;
 }
 
 th {
   position: sticky;
   top: 0;
   background: #f9fafb;
-  z-index: 1;
+  z-index: 10;
+}
+
+tfoot {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+}
+
+tfoot tr {
+  background: #f9fafb;
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.1);
+}
+
+tfoot td {
+  border-top: 1px solid #e5e7eb;
 }
 
 input[type="checkbox"] {
@@ -447,4 +527,4 @@ input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
-</style> 
+</style>
