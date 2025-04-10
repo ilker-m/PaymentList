@@ -54,12 +54,6 @@
             <p class="text-sm text-red-600" id="message" v-if="message">{{ message }}</p>
           </div>
         </form>
-
-        <div class="mt-4 text-center">
-          <button @click="showRegisterForm = true" class="text-sm text-blue-600 hover:text-blue-500">
-            Hesabınız yok mu? Kayıt olun
-          </button>
-        </div>
       </div>
     </div>
 
@@ -87,41 +81,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Kayıt Ol Modal -->
-    <div v-if="showRegisterForm" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
-      <div class="bg-white p-8 rounded-lg shadow-xl max-w-md w-full">
-        <h3 class="text-lg font-medium text-gray-900 mb-4">Kayıt Ol</h3>
-        <div class="space-y-4">
-          <div>
-            <label for="registerEmail" class="block text-sm font-medium text-gray-700">E-posta</label>
-            <input type="email" id="registerEmail" v-model="registerEmail"
-              class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-          </div>
-          <div>
-            <label for="registerSurname" class="block text-sm font-medium text-gray-700">Soyad</label>
-            <input type="text" id="registerSurname" v-model="registerSurname"
-              class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-          </div>
-          <div>
-            <label for="registerPass" class="block text-sm font-medium text-gray-700">Şifre</label>
-            <input type="password" id="registerPass" v-model="registerPass"
-              class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-          </div>
-          <p class="text-sm text-red-600" id="registerMessage" v-if="registerMessage">{{ registerMessage }}</p>
-          <div class="flex justify-end space-x-3">
-            <button @click="showRegisterForm = false"
-              class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md">
-              İptal
-            </button>
-            <button @click="handleRegister" :disabled="isLoadingRegister" id="sendregisterButton"
-              class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50">
-              {{ isLoadingRegister ? 'Gönderiliyor...' : 'Kayıt Ol' }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -132,7 +91,7 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 const email = ref('')
 const password = ref('')
-const rememberMe = ref(false)
+const rememberMe = ref(false) // Set to false by default (unchecked)
 const isLoading = ref(false)
 const message = ref('')
 
@@ -141,14 +100,6 @@ const showForgotPassword = ref(false)
 const forgotEmail = ref('')
 const isLoadingForgot = ref(false)
 const forgotMessage = ref('')
-
-// Kayıt ol
-const showRegisterForm = ref(false)
-const registerEmail = ref('')
-const registerSurname = ref('')
-const registerPass = ref('')
-const isLoadingRegister = ref(false)
-const registerMessage = ref('')
 
 const handleLogin = async () => {
   if (!email.value || !password.value) {
@@ -209,8 +160,8 @@ const handleLogin = async () => {
         sessionStorage.setItem('user', JSON.stringify(userData))
       }
 
-      // Dashboard'a yönlendir
-      await router.push('/dashboard')
+      // payment-list'de yönlendir
+      await router.push('/payment-list')
     } else {
       message.value = data.message || "Giriş başarısız.."
     }
@@ -259,57 +210,10 @@ const handleForgotPassword = async () => {
   }
 }
 
-const handleRegister = async () => {
-  if (!registerSurname.value || !registerEmail.value || !registerPass.value) {
-    registerMessage.value = "Tüm alanları doldurun."
-    return
-  }
-
-  isLoadingRegister.value = true
-  registerMessage.value = ''
-
-  try {
-    const response = await fetch(
-      `https://mobil.alkbusiness.com/api/User/Register?email=${encodeURIComponent(registerEmail.value)}&Surname=${encodeURIComponent(registerSurname.value)}&Password=${encodeURIComponent(registerPass.value)}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          surname: registerSurname.value,
-          email: registerEmail.value,
-          Pass: registerPass.value
-        })
-      }
-    )
-
-    const data = await response.json()
-
-    if (response.ok && data.code === 200) {
-      registerMessage.value = data.message
-      setTimeout(() => {
-        showRegisterForm.value = false
-        registerEmail.value = ''
-        registerSurname.value = ''
-        registerPass.value = ''
-        registerMessage.value = ''
-      }, 3000)
-    } else if (data.code === 409 || data.code === 500) {
-      registerMessage.value = data.message
-    } else {
-      registerMessage.value = "Kayıt sırasında bir hata oluştu."
-    }
-  } catch (error) {
-    console.error("Register error:", error)
-    registerMessage.value = "Kayıt sırasında bir hata oluştu."
-  } finally {
-    isLoadingRegister.value = false
-  }
-}
-
 // Enter tuşu ile login
 document.addEventListener('keydown', (event) => {
-  if (event.key === 'Enter' && !showForgotPassword.value && !showRegisterForm.value) {
+  if (event.key === 'Enter' && !showForgotPassword.value) {
     handleLogin()
   }
 })
-</script> 
+</script>
