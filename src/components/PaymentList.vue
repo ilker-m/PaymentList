@@ -62,35 +62,54 @@
       <!-- Main Content -->
       <div class="flex-1 overflow-auto p-4">
         <div class="bg-white shadow rounded-lg">
-          <div class="p-4 flex flex-col sm:flex-row justify-between items-center border-b">
-            <div class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4 mb-3 sm:mb-0">
-              <h1 class="text-lg font-bold sm:hidden">Ödeme Listeleri (LST-1)</h1>
-              <div class="flex space-x-2">
-    
-              </div>
-            </div>
-            <div class="flex items-center space-x-2">
-              <button @click="printTable" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-sm flex items-center">
-                <i class="fas fa-print mr-1"></i> Yazdır
-              </button>
-              
-              <button @click="fetchPaymentList" class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 text-sm flex items-center">
-                <i class="fas fa-sync-alt mr-1"></i> Yenile
-              </button>
-            </div>
+          <div class="px-4 pt-5 pb-2 flex flex-col justify-between items-center">
+            <h1 class="text-xl font-bold mb-2">Ödeme Listeleri</h1>
           </div>
 
           <!-- Filters -->
-          <div class="p-4 border-b">
-            <div class="flex space-x-4">
-              <div class="flex-1">
-                <div class="relative rounded-md shadow-sm">
-                  <input type="text" v-model="searchTerm" 
-                    class="block w-full h-12 pr-10 sm:text-lg border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Ara...">
-                  <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <i class="fas fa-search text-gray-400 text-lg"></i>
+          <div class="p-6 border-b bg-gray-50">
+            <div class="flex flex-col space-y-6">
+              <!-- Arama Kutusu ve Liste Seçici (yan yana) -->
+              <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
+                <!-- Liste Seçici (sol tarafta) -->
+                <div class="md:w-1/3">
+                  <label for="list-selector" class="block text-sm font-medium text-gray-700 mb-1">Liste Adı</label>
+                  <select 
+                    id="list-selector" 
+                    v-model="selectedList" 
+                    @change="fetchPaymentList"
+                    class="block w-full h-12 px-4 py-2 text-lg border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 shadow-sm">
+                    <option v-for="list in paymentLists" :key="list.Id" :value="list.ListName">
+                      {{ list.ListName }}
+                    </option>
+                  </select>
+                </div>
+                
+                <!-- Arama Kutusu (sağ tarafta) -->
+                <div class="flex-1">
+                  <label for="search-box" class="block text-sm font-medium text-gray-700 mb-1">Ara</label>
+                  <div class="relative rounded-md shadow-sm">
+                    <input 
+                      id="search-box"
+                      type="text" 
+                      v-model="searchTerm" 
+                      class="block w-full h-12 px-4 py-2 pr-10 text-lg border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Ara...">
+                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                      <i class="fas fa-search text-gray-400 text-lg"></i>
+                    </div>
                   </div>
+                </div>
+                
+                <!-- Butonlar -->
+                <div class="flex items-center space-x-2 md:self-end">
+                  <button @click="printTable" class="bg-blue-500 text-white px-4 py-3 rounded hover:bg-blue-600 text-sm flex items-center h-12">
+                    <i class="fas fa-print mr-1"></i> Yazdır
+                  </button>
+                  
+                  <button @click="fetchPaymentList" class="bg-green-500 text-white px-4 py-3 rounded hover:bg-green-600 text-sm flex items-center h-12">
+                    <i class="fas fa-sync-alt mr-1"></i> Yenile
+                  </button>
                 </div>
               </div>
             </div>
@@ -104,7 +123,7 @@
 
           <!-- Table -->
           <div class="overflow-x-auto" style="max-height: calc(100vh - 220px); position: relative;">
-            <table class="min-w-full divide-y divide-gray-200">
+            <table class="min-w-full divide-y divide-gray-200" tabindex="0" @keydown="handleTableKeydown">
               <thead class="bg-gray-50 sticky top-0 z-10">
                 <tr class="text-xs">
                   <!-- Removed ID column -->
@@ -155,77 +174,88 @@
               <tbody class="bg-white divide-y divide-gray-200 text-sm">
                 <template v-for="(group, groupName) in groupedRows" :key="groupName">
                   <tr class="bg-gray-100">
-                    <td colspan="16" class="px-2 py-1 font-semibold">{{ groupName }}</td>
+                    <td colspan="14" class="px-2 py-1 font-semibold">{{ groupName }}</td>
                   </tr>
-                  <tr v-for="row in group" :key="row.cariKod">
+                  <tr v-for="(row, rowIdx) in group" :key="row.cariKod">
                     <!-- Removed ID cell -->
-                    <td class="px-2 py-1">
+                    <td class="px-2 py-1" tabindex="0" @click="setActiveCell(getGlobalRowIndex(groupName, rowIdx), 0)">
                       <div class="flex flex-col">
                         <span class="font-bold">{{ row.cariKod }}</span>
                         <span class="text-gray-600 text-sm">{{ row.cariIsim }}</span>
                       </div>
                     </td>
-                    <td class="px-2 py-1">{{ row.firmaTipi }}</td>
-                    <td class="px-2 py-1">{{ row.birimAdi }}</td>
-                    <td class="px-2 py-1 text-right" :class="{'text-red-600': row.bakiyeTL < 0}">
+                    <td class="px-2 py-1" tabindex="0" @click="setActiveCell(getGlobalRowIndex(groupName, rowIdx), 1)">{{ row.firmaTipi }}</td>
+                    <td class="px-2 py-1" tabindex="0" @click="setActiveCell(getGlobalRowIndex(groupName, rowIdx), 2)">{{ row.birimAdi }}</td>
+                    <td class="px-2 py-1 text-right" :class="{'text-red-600': row.bakiyeTL < 0}" tabindex="0" @click="setActiveCell(getGlobalRowIndex(groupName, rowIdx), 3)">
                       {{ formatNumber(row.bakiyeTL) }}
                     </td>
-                    <td class="px-2 py-1 text-right" :class="{'text-red-600': row.guncelBakiyeTL < 0}">
+                    <td class="px-2 py-1 text-right" :class="{'text-red-600': row.guncelBakiyeTL < 0}" tabindex="0" @click="setActiveCell(getGlobalRowIndex(groupName, rowIdx), 4)">
                       {{ formatNumber(row.guncelBakiyeTL) }}
                     </td>
-                    <td class="px-2 py-1 text-right">{{ formatNumber(row.bakiyeDoviz) }}</td>
-                    <td class="px-2 py-1">{{ isValidDate(row.sonFatura) ? formatDate(row.sonFatura) : '' }}</td>
-                    <td class="px-2 py-1">{{ isValidDate(row.sonOdemeBilgisi) ? formatDate(row.sonOdemeBilgisi) : '' }}</td>
+                    <td class="px-2 py-1 text-right" tabindex="0" @click="setActiveCell(getGlobalRowIndex(groupName, rowIdx), 5)">{{ formatNumber(row.bakiyeDoviz) }}</td>
+                    <td class="px-2 py-1" tabindex="0" @click="setActiveCell(getGlobalRowIndex(groupName, rowIdx), 6)">{{ isValidDate(row.sonFatura) ? formatDate(row.sonFatura) : '' }}</td>
+                    <td class="px-2 py-1" tabindex="0" @click="setActiveCell(getGlobalRowIndex(groupName, rowIdx), 7)">{{ isValidDate(row.sonOdemeBilgisi) ? formatDate(row.sonOdemeBilgisi) : '' }}</td>
                     <td class="px-2 py-1 text-center">
                       <input type="text" 
                         :value="formatCurrency(row.nakit)" 
-                        @input="updateCurrencyField($event, row, 'nakit')"
-                        class="w-20 text-right border-gray-300 rounded bg-green-100" 
-                        @blur="updatePaymentAmounts(row)">
+                        @input="validateNumericInput($event, row, 'nakit')"
+                        @focus="onCurrencyFocus($event, row, 'nakit'); setActiveCell(getGlobalRowIndex(groupName, rowIdx), 8)"
+                        @blur="onCurrencyBlur($event, row, 'nakit'); updatePaymentAmounts(row)"
+                        class="w-20 text-right border-gray-300 rounded bg-green-100"
+                        tabindex="0">
                     </td>
                     <td class="px-2 py-1 text-center">
                       <input type="text" 
                         :value="formatCurrency(row.havale)" 
-                        @input="updateCurrencyField($event, row, 'havale')"
+                        @input="validateNumericInput($event, row, 'havale')"
+                        @focus="onCurrencyFocus($event, row, 'havale'); setActiveCell(getGlobalRowIndex(groupName, rowIdx), 9)"
+                        @blur="onCurrencyBlur($event, row, 'havale'); updatePaymentAmounts(row)"
                         class="w-20 text-right border-gray-300 rounded bg-green-100"
-                        @blur="updatePaymentAmounts(row)">
+                        tabindex="0">
                     </td>
                     <td class="px-2 py-1 text-center">
                       <input type="text" 
                         :value="formatCurrency(row.cek)" 
-                        @input="updateCurrencyField($event, row, 'cek')"
+                        @input="validateNumericInput($event, row, 'cek')"
+                        @focus="onCurrencyFocus($event, row, 'cek'); setActiveCell(getGlobalRowIndex(groupName, rowIdx), 10)"
+                        @blur="onCurrencyBlur($event, row, 'cek'); updatePaymentAmounts(row)"
                         class="w-20 text-right border-gray-300 rounded bg-green-100"
-                        @blur="updatePaymentAmounts(row)">
+                        tabindex="0">
                     </td>
                     <td class="px-2 py-1 text-right">
                       <input type="number" v-model="row.ortVade" 
+                        @focus="setActiveCell(getGlobalRowIndex(groupName, rowIdx), 11)"
                         class="w-16 text-right border-gray-300 rounded bg-green-100"
-                        @change="updatePaymentAmounts(row)">
+                        @change="updatePaymentAmounts(row)"
+                        tabindex="0">
                     </td>
                     <td class="px-2 py-1">
                       <input type="text" v-model="row.not" 
+                        @focus="setActiveCell(getGlobalRowIndex(groupName, rowIdx), 12)"
                         class="w-full border-gray-300 rounded bg-green-100"
-                        @change="updatePaymentAmounts(row)">
+                        @change="updatePaymentAmounts(row)"
+                        tabindex="0">
                     </td>
-                    <td class="px-2 py-1 text-right">{{ formatNumber(row.toplamOdeme) }}</td>
+                    <td class="px-2 py-1 text-right" tabindex="0" @click="setActiveCell(getGlobalRowIndex(groupName, rowIdx), 13)">{{ formatNumber(row.toplamOdeme) }}</td>
                   </tr>
                 </template>
               </tbody>
-            </table>
-            
-            <!-- Footer - Total Row (As a separate table) -->
-            <table class="min-w-full sticky bottom-0 z-10">
-              <tfoot class="bg-gray-50">
+              <tfoot class="bg-gray-50 sticky bottom-0 z-10">
                 <tr>
-                  <td colspan="3" class="px-2 py-2 text-right font-semibold bg-gray-50">Toplam:</td>
-                  <td class="px-2 py-2 text-right font-semibold bg-gray-50">{{ formatNumber(totalBakiye) }}</td>
-                  <td class="px-2 py-2 text-right font-semibold bg-gray-50">{{ formatNumber(totalGuncelBakiye) }}</td>
-                  <td colspan="3" class="px-2 py-2 bg-gray-50"></td>
-                  <td class="px-2 py-2 text-right font-semibold bg-gray-50">{{ formatNumber(totalNakit) }}</td>
-                  <td class="px-2 py-2 text-right font-semibold bg-gray-50">{{ formatNumber(totalHavale) }}</td>
-                  <td class="px-2 py-2 text-right font-semibold bg-gray-50">{{ formatNumber(totalCek) }}</td>
-                  <td colspan="2" class="px-2 py-2 bg-gray-50"></td>
-                  <td class="px-2 py-2 text-right font-semibold bg-gray-50">{{ formatNumber(totalAmount) }}</td>
+                  <td class="px-2 py-2 text-left font-semibold">Toplam:</td>
+                  <td class="px-2 py-2"></td>
+                  <td class="px-2 py-2"></td>
+                  <td class="px-2 py-2 text-right font-semibold">{{ formatNumber(totalBakiye) }}</td>
+                  <td class="px-2 py-2 text-right font-semibold">{{ formatNumber(totalGuncelBakiye) }}</td>
+                  <td class="px-2 py-2 text-right font-semibold">{{ formatNumber(totalBakiyeDoviz) }}</td>
+                  <td class="px-2 py-2"></td>
+                  <td class="px-2 py-2"></td>
+                  <td class="px-2 py-2 text-right font-semibold">{{ formatNumber(totalNakit) }}</td>
+                  <td class="px-2 py-2 text-right font-semibold">{{ formatNumber(totalHavale) }}</td>
+                  <td class="px-2 py-2 text-right font-semibold">{{ formatNumber(totalCek) }}</td>
+                  <td class="px-2 py-2"></td>
+                  <td class="px-2 py-2"></td>
+                  <td class="px-2 py-2 text-right font-semibold">{{ formatNumber(totalAmount) }}</td>
                 </tr>
               </tfoot>
             </table>
@@ -257,6 +287,7 @@ const userName = ref('')
 const userEmail = ref('')
 const userPhotoUrl = ref('')
 const selectedList = ref('')
+const paymentLists = ref([])
 const rows = ref([])
 const isLoading = ref(false)
 const searchTerm = ref('')
@@ -265,6 +296,28 @@ const sortDirection = ref('asc')
 const notification = ref({ visible: false, message: '', type: 'success' })
 const isNavbarOpen = ref(false) // For mobile overlay
 const isCollapsed = ref(true) // Always start collapsed
+const activeCell = ref(null) // Tabloda aktif hücre
+
+// Cookie'den değer okumak için yardımcı fonksiyon
+const getCookieValue = (cookieName) => {
+  const cookies = document.cookie.split(';').reduce((acc, cookie) => {
+    const [key, value] = cookie.trim().split('=')
+    acc[key] = value
+    return acc
+  }, {})
+  return cookies[cookieName] || ''
+}
+
+// Kullanıcı ID'sini al ve oturum kontrolü yap
+const checkUserSession = () => {
+  const userId = getCookieValue('UserId')
+  if (!userId) {
+    showNotification('Kullanıcı bilgisi bulunamadı, lütfen tekrar giriş yapın.', 'error')
+    router.push('/login')
+    return null
+  }
+  return userId
+}
 
 // Toggle sidebar collapsed/expanded state (Claude-style)
 const toggleSidebar = () => {
@@ -299,22 +352,54 @@ onMounted(() => {
     isNavbarOpen.value = false; // Start with navbar closed on mobile
   }
   
-  // Load payment data
-  fetchPaymentList()
+  // Önce liste bilgilerini yükle
+  fetchPaymentLists()
 })
+
+// Ödeme listelerini API'den çek
+const fetchPaymentLists = async () => {
+  try {
+    // Kullanıcı oturumunu kontrol et
+    const userId = checkUserSession()
+    if (!userId) return
+    
+    const response = await fetch(`https://mobil.alkbusiness.com/api/Payment/GetPaymentTop?UserId=${userId}`)
+    const data = await response.json()
+    
+    if (data && data.length > 0) {
+      paymentLists.value = data
+      selectedList.value = data[0].ListName // İlk listeyi seç
+      
+      // Liste bilgileri yüklendikten sonra verileri yükle
+      fetchPaymentList()
+    } else {
+      showNotification('Liste verileri bulunamadı.', 'error')
+    }
+  } catch (error) {
+    console.error('Liste çekme hatası:', error)
+    showNotification('Listeler yüklenirken bir hata oluştu.', 'error')
+  }
+}
 
 // Fetch payment list from API
 const fetchPaymentList = async () => {
+  if (!selectedList.value) return
+  
   isLoading.value = true
   try {
-    const listId = route.query.id || 'AKAL-LST-1' // Get id parameter from URL, or use default value
-    const response = await fetch(`https://mobil.alkbusiness.com/api/Payment/GetPaymentList/${listId}`)
+    // Kullanıcı oturumunu kontrol et
+    const userId = checkUserSession()
+    if (!userId) return
+    
+    // Yeni API formatı - query parametreleri ile
+    const listNo = selectedList.value
+    const response = await fetch(`https://mobil.alkbusiness.com/api/Payment/GetPaymentList?ListNo=${listNo}&UserId=${userId}`)
     const data = await response.json()
     
     // Convert API data to rows format
     rows.value = data.map(item => {
       return {
-        id: item.id || item.Id || item.currentId || item.CurrentId,
+        id: item.Id || item.id || '',
         group: item.RelatedUnitIdName,
         cariKod: item.CurrentCode,
         cariIsim: item.CurrentName,
@@ -375,26 +460,128 @@ function formatCurrency(value) {
   }).format(value)
 }
 
-// Parse currency input and update the model
-function updateCurrencyField(event, row, field) {
-  // Remove non-numeric characters except decimal point
-  let value = event.target.value.replace(/[^\d.,]/g, '')
+// Event handler for currency field focus
+function onCurrencyFocus(event, row, field) {
+  // Doğru alanın değerini göster
+  if (field === 'nakit') {
+    event.target.value = row.nakit || ''
+  } else if (field === 'havale') {
+    event.target.value = row.havale || ''
+  } else if (field === 'cek') {
+    event.target.value = row.cek || ''
+  }
+}
+
+// Event handler for currency field blur
+function onCurrencyBlur(event, row, field) {
+  // Get value and parse it
+  let value = event.target.value
   
-  // Handle comma as decimal separator (Turkish format)
+  // Remove all non-numeric characters except comma and dot
+  value = value.replace(/[^\d.,]/g, '')
+  
+  // Remove dots (thousand separators in Turkish locale)
+  value = value.replace(/\./g, '')
+  
+  // Replace comma with dot for JS parsing
   value = value.replace(/,/g, '.')
   
-  // If multiple decimal points, keep only the first one
-  const parts = value.split('.')
-  if (parts.length > 2) {
-    value = parts[0] + '.' + parts.slice(1).join('')
+  // Parse to number and update the model
+  const numericValue = parseFloat(value)
+  const parsedValue = isNaN(numericValue) ? 0 : numericValue
+  
+  // Her alan kendi değerini almalı, karışıklık olmamalı
+  if (field === 'nakit') {
+    row.nakit = parsedValue
+  } else if (field === 'havale') {
+    row.havale = parsedValue
+  } else if (field === 'cek') {
+    row.cek = parsedValue
   }
   
-  // Convert to number and update the model
-  row[field] = value === '' ? 0 : parseFloat(value)
+  // Toplam değeri burada güncelle - tablonun hemen yenilenmesi için
+  row.toplamOdeme = (Number(row.nakit) || 0) + 
+                   (Number(row.havale) || 0) + 
+                   (Number(row.cek) || 0)
+  
+  // Format for display
+  event.target.value = formatCurrency(parsedValue)
+}
+
+// Validate numeric input to prevent letter input
+function validateNumericInput(event, row, field) {
+  // Get the current input value
+  let value = event.target.value
+  
+  // Remove any non-numeric characters (except comma and dot for decimals)
+  let filteredValue = value.replace(/[^\d.,]/g, '')
+  
+  // Update the input field with the filtered value if it changed
+  if (value !== filteredValue) {
+    event.target.value = filteredValue
+  }
+}
+
+// Vue currency formatter directive - NOT USED ANYMORE
+const vCurrency = {
+  mounted: (el, binding) => {
+    const formatValue = (value) => {
+      if (value === '' || value === null || value === undefined) return ''
+      
+      const locale = binding.value?.locale || 'tr-TR'
+      const currency = binding.value?.currency || ''
+      
+      const formatter = new Intl.NumberFormat(locale, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+        ...(currency && { style: 'currency', currency })
+      })
+      
+      return formatter.format(value)
+    }
+    
+    const getValue = () => {
+      let value = el.value
+      
+      // Remove all non-numeric characters except decimal separator
+      value = value.replace(/[^\d.,]/g, '')
+      
+      // Handle Turkish number format (dot as thousands separator, comma as decimal)
+      value = value.replace(/\./g, '') // Remove dots (thousand separators)
+      value = value.replace(/,/g, '.') // Replace comma with dot for JS parsing
+      
+      return parseFloat(value) || 0
+    }
+    
+    // When input changes - now just store the raw value without formatting
+    el.addEventListener('input', (e) => {
+      const rawValue = getValue()
+      if (binding.value && typeof binding.value === 'object') {
+        binding.value.value = rawValue
+      }
+      // No DOM update here - let user continue typing without formatting
+    })
+    
+    // Clear input on focus and show raw value
+    el.addEventListener('focus', () => {
+      const numericValue = getValue()
+      el.value = numericValue || ''
+    })
+    
+    // Format on blur - only format when user leaves the field
+    el.addEventListener('blur', () => {
+      const numericValue = getValue()
+      if (binding.value && typeof binding.value === 'object') {
+        binding.value.value = numericValue
+        binding.value.formatted = formatValue(numericValue)
+      }
+      el.value = formatValue(numericValue)
+    })
+  }
 }
 
 function updatePaymentAmounts(row) {
-  // Update total payment
+  // Update total payment - API tarafında da güncellemek için
   row.toplamOdeme = (Number(row.nakit) || 0) + 
                     (Number(row.havale) || 0) + 
                     (Number(row.cek) || 0)
@@ -402,6 +589,11 @@ function updatePaymentAmounts(row) {
   // Send to API
   const sendToApi = async () => {
     try {
+      // Kullanıcı oturumunu kontrol et
+      const userId = checkUserSession()
+      if (!userId) return
+
+      // API'nin beklediği sadece bu alanları içeren istek gövdesi
       const requestData = {
         Cash: Number(row.nakit) || 0,
         WireTransfer: Number(row.havale) || 0,
@@ -410,6 +602,7 @@ function updatePaymentAmounts(row) {
         Description: row.not || ''
       }
 
+      // URL'de ID parametresi ile çağrı yap
       const response = await fetch(`https://mobil.alkbusiness.com/api/Payment/UpdatePaymentAmounts/${row.id}`, {
         method: 'PUT',
         headers: {
@@ -422,7 +615,7 @@ function updatePaymentAmounts(row) {
       if (!response.ok) {
         throw new Error('API yanıt hatası: ' + response.status)
       } else {
-        const updatedValue = row.nakit + row.havale + row.cek
+        const updatedValue = row.toplamOdeme
         showNotification(`Ödeme başarıyla güncellendi. Toplam: ${formatNumber(updatedValue)}`, 'success')
       }
     } catch (error) {
@@ -434,6 +627,7 @@ function updatePaymentAmounts(row) {
   // Start API submission
   sendToApi()
 }
+
 // Yazdır fonksiyonunu ekleyelim
 // Yazdır fonksiyonunu ekleyelim
 const printTable = () => {
@@ -681,27 +875,31 @@ const groupedRows = computed(() => {
 })
 
 const totalAmount = computed(() => {
-  return rows.value.reduce((sum, row) => sum + (Number(row.toplamOdeme) || 0), 0)
+  return filteredAndSortedRows.value.reduce((sum, row) => sum + (Number(row.toplamOdeme) || 0), 0)
 })
 
 const totalBakiye = computed(() => {
-  return rows.value.reduce((sum, row) => sum + (Number(row.bakiyeTL) || 0), 0)
+  return filteredAndSortedRows.value.reduce((sum, row) => sum + (Number(row.bakiyeTL) || 0), 0)
 })
 
 const totalGuncelBakiye = computed(() => {
-  return rows.value.reduce((sum, row) => sum + (Number(row.guncelBakiyeTL) || 0), 0)
+  return filteredAndSortedRows.value.reduce((sum, row) => sum + (Number(row.guncelBakiyeTL) || 0), 0)
+})
+
+const totalBakiyeDoviz = computed(() => {
+  return filteredAndSortedRows.value.reduce((sum, row) => sum + (Number(row.bakiyeDoviz) || 0), 0)
 })
 
 const totalNakit = computed(() => {
-  return rows.value.reduce((sum, row) => sum + (Number(row.nakit) || 0), 0)
+  return filteredAndSortedRows.value.reduce((sum, row) => sum + (Number(row.nakit) || 0), 0)
 })
 
 const totalHavale = computed(() => {
-  return rows.value.reduce((sum, row) => sum + (Number(row.havale) || 0), 0)
+  return filteredAndSortedRows.value.reduce((sum, row) => sum + (Number(row.havale) || 0), 0)
 })
 
 const totalCek = computed(() => {
-  return rows.value.reduce((sum, row) => sum + (Number(row.cek) || 0), 0)
+  return filteredAndSortedRows.value.reduce((sum, row) => sum + (Number(row.cek) || 0), 0)
 })
 
 function formatNumber(value) {
@@ -720,6 +918,107 @@ const showNotification = (message, type) => {
   setTimeout(() => {
     notification.value.visible = false
   }, 3000) // Disappears automatically after 3 seconds
+}
+
+// Table navigation handlers
+const handleTableKeydown = (event) => {
+  if (!activeCell.value) return
+  
+  const { rowIndex, cellIndex } = activeCell.value
+  let nextRowIndex = rowIndex
+  let nextCellIndex = cellIndex
+  
+  switch (event.key) {
+    case 'ArrowUp':
+      nextRowIndex = Math.max(0, rowIndex - 1)
+      event.preventDefault()
+      break
+    case 'ArrowDown':
+      nextRowIndex = Math.min(getFlattenedRows().length - 1, rowIndex + 1)
+      event.preventDefault()
+      break
+    case 'ArrowLeft':
+      nextCellIndex = Math.max(0, cellIndex - 1)
+      event.preventDefault()
+      break
+    case 'ArrowRight':
+      // İlgili satırda kaç hücre var hesaplanmalı (örnek olarak 14 varsayıyorum)
+      nextCellIndex = Math.min(13, cellIndex + 1)
+      event.preventDefault()
+      break
+    case 'Tab':
+      if (event.shiftKey) {
+        nextCellIndex = Math.max(0, cellIndex - 1)
+      } else {
+        nextCellIndex = Math.min(13, cellIndex + 1)
+      }
+      if (nextCellIndex === cellIndex) {
+        if (event.shiftKey) {
+          nextRowIndex = Math.max(0, rowIndex - 1)
+          nextCellIndex = 13 // Son hücre
+        } else {
+          nextRowIndex = Math.min(getFlattenedRows().length - 1, rowIndex + 1)
+          nextCellIndex = 0 // İlk hücre
+        }
+      }
+      event.preventDefault()
+      break
+    case 'Enter':
+      // Enter tuşu aşağı gider
+      nextRowIndex = Math.min(getFlattenedRows().length - 1, rowIndex + 1)
+      event.preventDefault()
+      break
+    default:
+      return // Diğer tuşlar için bir şey yapma
+  }
+  
+  // Yeni hücreyi bul ve odaklan
+  focusCell(nextRowIndex, nextCellIndex)
+}
+
+// Hücreye tıklama ile aktif hücreyi ayarla
+const setActiveCell = (rowIndex, cellIndex) => {
+  activeCell.value = { rowIndex, cellIndex }
+}
+
+// Belirli bir hücreye odaklan
+const focusCell = (rowIndex, cellIndex) => {
+  activeCell.value = { rowIndex, cellIndex }
+  
+  // DOM'da ilgili hücreyi bul ve odaklan
+  setTimeout(() => {
+    const rows = document.querySelectorAll('tbody tr:not(.bg-gray-100)') // Grup başlıkları hariç
+    if (rows[rowIndex]) {
+      const cells = rows[rowIndex].querySelectorAll('td')
+      if (cells[cellIndex]) {
+        const input = cells[cellIndex].querySelector('input')
+        if (input) {
+          input.focus()
+        } else {
+          cells[cellIndex].focus()
+        }
+      }
+    }
+  }, 0)
+}
+
+// Düzleştirilmiş satırları al (grup başlıkları hariç)
+const getFlattenedRows = () => {
+  return Object.values(groupedRows.value).flat()
+}
+
+// Gruba ve grup içindeki indekse göre genel satır indeksini hesapla
+const getGlobalRowIndex = (groupName, rowIndexInGroup) => {
+  let globalIndex = 0
+  
+  for (const [gName, rows] of Object.entries(groupedRows.value)) {
+    if (gName === groupName) {
+      return globalIndex + rowIndexInGroup
+    }
+    globalIndex += rows.length
+  }
+  
+  return 0
 }
 </script>
 
@@ -809,6 +1108,30 @@ input[type="number"]::-webkit-inner-spin-button {
   
   .overflow-x-auto {
     max-height: calc(100vh - 180px);
+  }
+}
+
+/* Landscape mode for mobile devices */
+@media (max-height: 500px) and (orientation: landscape) {
+  .overflow-x-auto {
+    max-height: calc(100vh - 100px);
+  }
+  
+  /* Make sidebar smaller in landscape */
+  .w-64 {
+    width: 160px !important;
+  }
+  
+  /* Reduce padding in filters area */
+  .p-6 {
+    padding: 0.75rem !important;
+  }
+  
+  /* Reduce vertical spacing */
+  .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(0.75rem * var(--tw-space-y-reverse));
   }
 }
 </style>
